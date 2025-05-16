@@ -1,3 +1,16 @@
+class Piece {
+    constructor(color) {
+        this.element = document.createElement('span');
+        this.element.style.backgroundColor = color;
+        this.element.classList.add('piece');
+        this.element.style.width = (cellSize - 10) + 'px';
+        this.element.style.height = (cellSize - 10) + 'px';
+        // this.element.style.width = '20px'
+        // this.element.style.height = '20px'
+    }
+}
+
+
 class Cell {
     constructor(x, y, row, col) {
         this.row = row;
@@ -5,10 +18,11 @@ class Cell {
 
         this.element = document.createElement('div');
         if ((row + col) % 2 == 0) {
-            this.element.style.backgroundColor = 'beige';
+            this.element.style.backgroundColor = cellcolor1;
         } else {
-            this.element.style.backgroundColor = '#704004';
+            this.element.style.backgroundColor = cellcolor2;
         }
+        this.element.classList.add('cell');
         this.element.style.width = (cellSize - 4) + 'px';
         this.element.style.height = (cellSize - 4) + 'px';
         this.element.style.position = 'absolute';
@@ -17,17 +31,21 @@ class Cell {
         this.playableCell = true;
 
         this.element.addEventListener('click', () => {
-            if(this.playableCell) {
-                this.toggleColor();
+            if (this.playableCell) {
+                // this.toggleColor();
+                this.piece = this.addPiece(player);
+                swapPlayer();
                 console.log(`Clicked cell at row: ${this.row}, col: ${this.col}`);
-                gridDiv.style.pointerEvents = "none";
-                console.log('grid disabled');
-                setTimeout(() => {
-                    gridDiv.style.pointerEvents = 'auto';
-                    console.log('grid enabled');
-                  }, 2000);
+                this.playableCell = false;
+                // gridDiv.style.pointerEvents = "none";
+                // console.log('grid disabled');
+                // setTimeout(() => {
+                //     gridDiv.style.pointerEvents = 'auto';
+                //     console.log('grid enabled');
+                //   }, 2000);
             } else {
                 console.log('invalid cell')
+                this.swapPieceColor();
             }
         });
     }
@@ -39,6 +57,18 @@ class Cell {
 
     render(parent) {
         parent.append(this.element);
+    }
+
+    addPiece(color) {
+        const piece = new Piece(color);
+        this.element.append(piece.element);
+        return piece
+    }
+
+    swapPieceColor() {
+        const currentColor = this.piece.element.style.backgroundColor;
+        console.log(currentColor)
+        this.piece.element.style.backgroundColor = currentColor === 'black' ? 'white' : 'black';
     }
 }
 
@@ -69,6 +99,9 @@ function printBitboard(boards) {
     console.log(position);
 }
 
+let player = 'white';
+const cellcolor1 = '#7a3704'
+const cellcolor2 = '#de9849'
 const rows = 8;
 const cols = rows;
 const gridDiv = document.getElementById("grid")
@@ -176,6 +209,10 @@ function checkDirection(playerPos, enemyPos, shiftdir, shiftAmount, mask){
         }
     }
     return validMoves;
+}
+
+function swapPlayer() {
+    player = player === 'black' ? 'white' : 'black';
 }
 
 

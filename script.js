@@ -143,15 +143,36 @@ function findValidMoves(playerPos, enemyPos) {
     const rightEdgeMask = 0xfefefefefefefefen;
     
     let validMoves = 0n;
+    let validMovesArray = [];
     // validMoves = validMoves | checkright(playerPos, enemyPos);
     // validMoves = validMoves | checkleft(playerPos, enemyPos);
-    validMoves = validMoves | checkDirection(playerPos, enemyPos, 'right', 1n, leftEdgeMask);
-    validMoves = validMoves | checkDirection(playerPos, enemyPos, 'right', 7n, rightEdgeMask);
-    validMoves = validMoves | checkDirection(playerPos, enemyPos, 'right', 9n, leftEdgeMask);
-    validMoves = validMoves | checkDirection(playerPos, enemyPos, 'left', 1n, rightEdgeMask);
-    validMoves = validMoves | checkDirection(playerPos, enemyPos, 'left', 7n, leftEdgeMask);
-    validMoves = validMoves | checkDirection(playerPos, enemyPos, 'left', 9n, rightEdgeMask);
-    validMoves = validMoves | checkDirection(playerPos, enemyPos, 'both', 8n, boardMask);
+    // validMovesArray.push(checkDirection(playerPos, enemyPos, 'right', 1n, leftEdgeMask));
+    // validMoves = validMoves | validMovesArray[validMovesArray.length - 1]
+    // validMoves = validMoves | checkDirection(playerPos, enemyPos, 'right', 1n, leftEdgeMask);
+    // validMoves = validMoves | checkDirection(playerPos, enemyPos, 'right', 7n, rightEdgeMask);
+    // validMoves = validMoves | checkDirection(playerPos, enemyPos, 'right', 9n, leftEdgeMask);
+    // validMoves = validMoves | checkDirection(playerPos, enemyPos, 'left', 1n, rightEdgeMask);
+    // validMoves = validMoves | checkDirection(playerPos, enemyPos, 'left', 7n, leftEdgeMask);
+    // validMoves = validMoves | checkDirection(playerPos, enemyPos, 'left', 9n, rightEdgeMask);
+    // validMoves = validMoves | checkDirection(playerPos, enemyPos, 'both', 8n, boardMask);
+    validMovesArray.push(checkDirection(playerPos, enemyPos, 'left', 9n, rightEdgeMask));
+    validMovesArray.push(checkDirection(playerPos, enemyPos, 'left', 8n, boardMask));
+    validMovesArray.push(checkDirection(playerPos, enemyPos, 'left', 7n, leftEdgeMask));
+    validMovesArray.push(checkDirection(playerPos, enemyPos, 'left', 1n, rightEdgeMask));
+    validMovesArray.push(checkDirection(playerPos, enemyPos, 'right', 1n, leftEdgeMask));
+    validMovesArray.push(checkDirection(playerPos, enemyPos, 'right', 7n, rightEdgeMask));
+    validMovesArray.push(checkDirection(playerPos, enemyPos, 'right', 8n, boardMask));
+    validMovesArray.push(checkDirection(playerPos, enemyPos, 'right', 9n, leftEdgeMask));
+    validMovesArray.forEach((value, index) => {
+        console.log('index is ' + index);
+        printBitboard(new Map([["A", value]]));
+        validMoves = validMoves | value
+
+    });
+    // for (validMove in validMovesArray) {
+    //     printBitboard(new Map([["a", validMove]]))
+    //     validMoves = validMoves | validMove
+    // }
 
     return validMoves;
 }

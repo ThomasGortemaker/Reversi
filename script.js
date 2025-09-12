@@ -34,9 +34,14 @@ class Cell {
             if (this.playableCell) {
                 // this.toggleColor();
                 this.piece = this.addPiece(player);
-                swapPlayer();
                 console.log(`Clicked cell at row: ${this.row}, col: ${this.col}`);
+                if (player == 'white') {
+                    whiteBitBoard = whiteBitBoard | (1n << (63n - BigInt(row * 8 + col)))
+                } else {
+                    blackBitBoard = blackBitBoard | (1n << (63n - BigInt(row * 8 + col)))
+                }
                 this.playableCell = false;
+                swapPlayer();
                 // gridDiv.style.pointerEvents = "none";
                 // console.log('grid disabled');
                 // setTimeout(() => {
@@ -44,9 +49,19 @@ class Cell {
                 //     console.log('grid enabled');
                 //   }, 2000);
             } else {
-                console.log('invalid cell')
-                this.swapPieceColor();
+                // if (this.piece.element.style.backgroundColor == 'black') {
+                //     blackBitBoard = blackBitBoard ^ ((1n << (63n - BigInt(row * 8 + col))))
+                //     whiteBitBoard = whiteBitBoard | ((1n << (63n - BigInt(row * 8 + col))))
+                // } else {
+                //     whiteBitBoard = whiteBitBoard ^ ((1n << (63n - BigInt(row * 8 + col))))
+                //     blackBitBoard = blackBitBoard | ((1n << (63n - BigInt(row * 8 + col))))
+                // }
+                // this.swapPieceColor();
+                console.log(`invalid cell [${this.row},${this.col}]`)
+                console.log(grid[this.row][this.col])
             }
+            flipPieces(1n << (63n - BigInt(row * 8 + col)));
+            updateBoard();
         });
     }
 
@@ -62,6 +77,7 @@ class Cell {
     addPiece(color) {
         const piece = new Piece(color);
         this.element.append(piece.element);
+        this.enable(false)
         return piece
     }
 
@@ -70,6 +86,56 @@ class Cell {
         console.log(currentColor)
         this.piece.element.style.backgroundColor = currentColor === 'black' ? 'white' : 'black';
     }
+
+    enable(enabled) {
+        // enabled = Boolean(enabled);
+        // if (enabled) {
+        //     this.element.style.pointerEvents = 'auto';
+        // } else {
+        //     this.element.style.pointerEvents = 'none';
+        // }
+        this.playableCell = enabled;
+        if (this.playableCell) {
+            console.log(`[${this.row},${this.col}] playable set to: ${this.playableCell}`)
+        }
+        return this.playableCell;
+    }
+
+    isEnabled() {
+        // return this.element.style.pointerEvents = 'auto'
+        return this.playableCell;
+    }
+}
+
+function updateBoard() {
+    let validMoves = 0n
+    if (player == 'white') {
+        validMoves = findValidMoves(whiteBitBoard, blackBitBoard)
+    } else {
+        validMoves = findValidMoves(blackBitBoard, whiteBitBoard)
+    }
+    printBitboard(new Map([["B", blackBitBoard], ["W", whiteBitBoard], ["V", validMoves]]))
+    for (let row = 0n; row < 8n; row++) {
+        for (let col = 0n; col < 8n; col++) {
+            if (validMoves >> (63n - (row * 8n + col)) & 1n) {
+                // console.log(`[${row},${col}] is valid`)
+                grid[row][col].enable(true)
+            } else {
+                grid[row][col].enable(false)
+            }
+        }
+    }
+}
+
+function flipPieces(addedPiece) {
+    let piecesToSwap = 0n;
+    let dirMapping = [9n, 8n, 7n, 1n, -1n, -7n, -8n, -9n];
+    validMovesArray.forEach((value, index) => {
+        // console.log((value.toString(2)))
+        // console.log((addedPiece.toString(2)))
+        console.log(dirMapping[index])
+        printBitboard(new Map([["M",(value & addedPiece)]]))
+    });
 }
 
 function printBitboard(boards) {
@@ -99,6 +165,8 @@ function printBitboard(boards) {
     console.log(position);
 }
 
+let blackBitBoard = 0x0000000810000000n;
+let whiteBitBoard = 0x0000001008000000n;
 let player = 'white';
 const cellcolor1 = '#7a3704'
 const cellcolor2 = '#de9849'
@@ -107,7 +175,8 @@ const cols = rows;
 const gridDiv = document.getElementById("grid")
 const cellSize = (gridDiv.clientWidth)/rows;
 let grid = [];
-
+let validMovesArray = [];
+let position = 1n;
 for (let row = 0; row < rows; row++) {
     const rowArray = [];
     for (let col = 0; col < cols; col++) {
@@ -116,18 +185,18 @@ for (let row = 0; row < rows; row++) {
         const cell = new Cell(x, y, row, col); // Pass row and col
         cell.render(gridDiv);
         rowArray.push(cell);
+        if ((position & whiteBitBoard) > 0n) {
+            console.log('adding white piece');
+            cell.addPiece('white');
+        } else if ((position & blackBitBoard) > 0n) {
+            console.log('adding black piece');
+            cell.addPiece('black');
+        }
+        position = position << 1n;
     }
     grid.push(rowArray);
 }  
-
-
-let white = (1n << 27n) | (1n << 36n);
-let black = (1n << 28n) | (1n << 35n) | (1n << 34n) | (1n << 33n) | (1n << 42n);
-
-printBitboard(new Map([["W", white],["B", black]]));
-let validMoves = findValidMoves(white, black);
-printBitboard(new Map([["V", validMoves],["W", white],["B", black]]))
-
+updateBoard()
 
 /*  shift direction: potential moves = (player pos & enemy pos) & edge mask), this will become potential moves
     shift direction: potential moves = (potential moves & edgemask)
@@ -141,9 +210,8 @@ function findValidMoves(playerPos, enemyPos) {
     const boardMask = 0xffffffffffffffffn;
     const leftEdgeMask = 0x7f7f7f7f7f7f7f7fn;
     const rightEdgeMask = 0xfefefefefefefefen;
-    
+    validMovesArray = [];
     let validMoves = 0n;
-    let validMovesArray = [];
     // validMoves = validMoves | checkright(playerPos, enemyPos);
     // validMoves = validMoves | checkleft(playerPos, enemyPos);
     // validMovesArray.push(checkDirection(playerPos, enemyPos, 'right', 1n, leftEdgeMask));
@@ -163,9 +231,9 @@ function findValidMoves(playerPos, enemyPos) {
     validMovesArray.push(checkDirection(playerPos, enemyPos, 'right', 7n, rightEdgeMask));
     validMovesArray.push(checkDirection(playerPos, enemyPos, 'right', 8n, boardMask));
     validMovesArray.push(checkDirection(playerPos, enemyPos, 'right', 9n, leftEdgeMask));
-    validMovesArray.forEach((value, index) => {
-        console.log('index is ' + index);
-        printBitboard(new Map([["A", value]]));
+    validMovesArray.forEach((value) => {
+        // console.log('index is ' + index);
+        // printBitboard(new Map([["A", value]]));
         validMoves = validMoves | value
 
     });
@@ -183,7 +251,7 @@ function checkright(playerPos, enemyPos) {
     const empty = ~(playerPos | enemyPos);
     let potentialMoves = ((playerPos >> 1n) & enemyPos) & leftEdgeMask;
     while(potentialMoves != 0n) {
-        printBitboard(new Map([["P", potentialMoves]]))
+        // printBitboard(new Map([["P", potentialMoves]]))
         potentialMoves = (potentialMoves >> 1n) & leftEdgeMask;
         validMoves = (potentialMoves & empty) | validMoves;
         potentialMoves = potentialMoves & enemyPos;
@@ -197,7 +265,7 @@ function checkleft(playerPos, enemyPos) {
     const empty = ~(playerPos | enemyPos);
     let potentialMoves = ((playerPos << 1n) & enemyPos) & rightEdgeMask;
     while(potentialMoves != 0n) {
-        printBitboard(new Map([["P", potentialMoves]]))
+        // printBitboard(new Map([["P", potentialMoves]]))
         potentialMoves = (potentialMoves << 1n) & rightEdgeMask;
         validMoves = (potentialMoves & empty) | validMoves;
         potentialMoves = potentialMoves & enemyPos;
@@ -214,7 +282,7 @@ function checkDirection(playerPos, enemyPos, shiftdir, shiftAmount, mask){
     if(shiftdir == 'left' || shiftdir == 'both') {
         let potentialMoves = ((playerPos << shiftAmount) & enemyPos) & mask;
         while(potentialMoves != 0n) {
-            printBitboard(new Map([["P", potentialMoves]]))
+            // printBitboard(new Map([["P", potentialMoves]]))
             potentialMoves = (potentialMoves << shiftAmount) & mask;
             validMoves = (potentialMoves & empty) | validMoves;
             potentialMoves = potentialMoves & enemyPos;
@@ -223,7 +291,7 @@ function checkDirection(playerPos, enemyPos, shiftdir, shiftAmount, mask){
     if(shiftdir == 'right' || shiftdir == 'both') {
         let potentialMoves = ((playerPos >> shiftAmount) & enemyPos) & mask;
         while(potentialMoves != 0n) {
-            printBitboard(new Map([["P", potentialMoves]]))
+            // printBitboard(new Map([["P", potentialMoves]]))
             potentialMoves = (potentialMoves >> shiftAmount) & mask;
             validMoves = (potentialMoves & empty) | validMoves;
             potentialMoves = potentialMoves & enemyPos;
@@ -235,7 +303,3 @@ function checkDirection(playerPos, enemyPos, shiftdir, shiftAmount, mask){
 function swapPlayer() {
     player = player === 'black' ? 'white' : 'black';
 }
-
-
-
-// NOTE: using the edgemasks will fix this but for some reason bigInts allow bits above the 63rd position.

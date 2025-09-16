@@ -1,12 +1,19 @@
 class Piece {
     constructor(color) {
         this.element = document.createElement('span');
-        this.element.style.backgroundColor = color;
+        this.setColor(color);
         this.element.classList.add('piece');
         this.element.style.width = (cellSize - 10) + 'px';
         this.element.style.height = (cellSize - 10) + 'px';
         // this.element.style.width = '20px'
         // this.element.style.height = '20px'
+    }
+
+    setColor(color) {
+        if (this.color != color) {
+            this.color = color;
+            this.element.style.backgroundColor = color;
+        }
     }
 }
 
@@ -131,8 +138,9 @@ function flipPieces(addedPiece) {
     let piecesToSwap = 0n;
     let dirMapping = [9n, 8n, 7n, 1n, -1n, -7n, -8n, -9n];
     validMovesArray.forEach((value, index) => {
-        // console.log((value.toString(2)))
-        // console.log((addedPiece.toString(2)))
+        if (value & addedPiece == 1n) {
+            
+        }
         console.log(dirMapping[index])
         printBitboard(new Map([["M",(value & addedPiece)]]))
     });

@@ -48,6 +48,7 @@ class Cell {
                     blackBitBoard = blackBitBoard | (1n << (63n - BigInt(row * 8 + col)))
                 }
                 this.playableCell = false;
+                flipPieces(1n << (63n - BigInt(row * 8 + col)));
                 swapPlayer();
                 // gridDiv.style.pointerEvents = "none";
                 // console.log('grid disabled');
@@ -67,7 +68,6 @@ class Cell {
                 console.log(`invalid cell [${this.row},${this.col}]`)
                 console.log(grid[this.row][this.col])
             }
-            flipPieces(1n << (63n - BigInt(row * 8 + col)));
             updateBoard();
         });
     }
@@ -138,11 +138,11 @@ function flipPieces(addedPiece) {
     let piecesToSwap = 0n;
     let dirMapping = [9n, 8n, 7n, 1n, -1n, -7n, -8n, -9n];
     validMovesArray.forEach((value, index) => {
-        if (value & addedPiece == 1n) {
-            
+        // printBitboard(new Map([["M",(value & addedPiece)]]))
+        if ((value & addedPiece) != 0n) {
+            printBitboard(new Map([["a",(addedPiece >> dirMapping[index])]]))
         }
         console.log(dirMapping[index])
-        printBitboard(new Map([["M",(value & addedPiece)]]))
     });
 }
 
@@ -218,7 +218,7 @@ function findValidMoves(playerPos, enemyPos) {
     const boardMask = 0xffffffffffffffffn;
     const leftEdgeMask = 0x7f7f7f7f7f7f7f7fn;
     const rightEdgeMask = 0xfefefefefefefefen;
-    validMovesArray = [];
+    // validMovesArray = [];
     let validMoves = 0n;
     // validMoves = validMoves | checkright(playerPos, enemyPos);
     // validMoves = validMoves | checkleft(playerPos, enemyPos);

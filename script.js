@@ -24,7 +24,7 @@ class Cell {
         this.col = col;
 
         this.element = document.createElement('div');
-        if ((row + col) % 2 == 0) {
+        if ((Number(row) + Number(col)) % 2 == 0) {
             this.element.style.backgroundColor = cellcolor1;
         } else {
             this.element.style.backgroundColor = cellcolor2;
@@ -44,12 +44,12 @@ class Cell {
                 // this.piece = this.addPiece(player);
                 console.log(`Clicked cell at row: ${this.row}, col: ${this.col}`);
                 if (player == 'white') {
-                    whiteBitBoard = whiteBitBoard | (1n << (63n - BigInt(row * 8 + col)))
+                    whiteBitBoard = whiteBitBoard | (1n << row * 8n + col)
                 } else {
-                    blackBitBoard = blackBitBoard | (1n << (63n - BigInt(row * 8 + col)))
+                    blackBitBoard = blackBitBoard | (1n << row * 8n + col)
                 }
                 this.playableCell = false;
-                flipPieces(1n << (63n - BigInt(row * 8 + col)));
+                flipPieces(1n << (row * 8n + col));
                 swapPlayer();
                 // gridDiv.style.pointerEvents = "none";
                 // console.log('grid disabled');
@@ -106,32 +106,40 @@ class Cell {
     isEnabled() {
         return this.playableCell;
     }
+
+    hasPiece() {
+        return this.element.querySelector('.piece') !== null
+    }
 }
 
 function updateBoard() {
     let validMoves = 0n
-    let position = 1n;
+    let shift = 63n
     if (player == 'white') {
         validMoves = findValidMoves(whiteBitBoard, blackBitBoard)
     } else {
         validMoves = findValidMoves(blackBitBoard, whiteBitBoard)
     }
     printBitboard(new Map([["B", blackBitBoard], ["W", whiteBitBoard], ["V", validMoves]]))
-    for (let row = 0n; row < 8n; row++) {
-        for (let col = 0n; col < 8n; col++) {
-            if (validMoves >> (63n - (row * 8n + col)) & 1n) {
+    for (let row = rows; row >= 0n; row--) {
+        for (let col = cols; col >= 0n; col--) {
+            if ((validMoves >> (row * 8n + col * 1n)) & 1n) {
                 grid[row][col].enable(true)
             } else {
                 grid[row][col].enable(false)
             }
-            if ((position & whiteBitBoard) > 0n) {
-                console.log('adding white piece');
-                grid[row][col].addPiece('white');
-            } else if ((position & blackBitBoard) > 0n) {
-                console.log('adding black piece');
-                grid[row][col].addPiece('black');
+            if ((whiteBitBoard >> shift) & 1n) {
+                if (!grid[row][col].hasPiece()) {
+                    console.log('adding white piece');
+                    grid[row][col].addPiece('white');
+                }
+            } else if ((blackBitBoard >> shift) & 1n) {
+                if (!grid[row][col].hasPiece()) {
+                    console.log('adding black piece');
+                    grid[row][col].addPiece('black');
+                }
             }
-            position = position << 1n
+            shift--;
         }
     }
 }
@@ -141,11 +149,10 @@ function flipPieces(addedPiece) {
     let dirMapping = [9n, 8n, 7n, 1n, -1n, -7n, -8n, -9n];
     validMovesArray.forEach((value, index) => {
         // printBitboard(new Map([["M",(value & addedPiece)]]))
-        printBitboard(new Map([["P",value]]))
+        // printBitboard(new Map([["P",value]]))
         if ((value & addedPiece) != 0n) {
             printBitboard(new Map([["a",(addedPiece >> dirMapping[index])]]))
         }
-        console.log(dirMapping[index])
     });
 }
 
@@ -177,21 +184,21 @@ function printBitboard(boards) {
 }
 
 let blackBitBoard = 0x0000000810000000n;
-let whiteBitBoard = 0x0000001008000001n;
+let whiteBitBoard = 0x0000001008000000n;
 let player = 'white';
 const cellcolor1 = '#7a3704'
 const cellcolor2 = '#de9849'
-const rows = 7;
+const rows = 7n;
 const cols = rows;
 const gridDiv = document.getElementById("grid")
-const cellSize = (gridDiv.clientWidth)/rows;
+const cellSize = (gridDiv.clientWidth)/Number(rows);
 let grid = [];
 let validMovesArray = [];
-for (let row = rows; row >= 0; row--) {
+for (let row = rows; row >= 0n; row--) {
     const rowArray = [];
-    for (let col = cols; col >= 0; col--) {
-        const x = (cols - col) * cellSize;
-        const y = (rows - row) * cellSize;
+    for (let col = cols; col >= 0n; col--) {
+        const x = Number(cols - col) * cellSize;
+        const y = Number(rows - row) * cellSize;
         const cell = new Cell(x, y, row, col); // Pass row and col
         cell.render(gridDiv);
         rowArray[col] = cell;

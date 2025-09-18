@@ -66,8 +66,8 @@ class Cell {
                 //     blackBitBoard = blackBitBoard | ((1n << (63n - BigInt(row * 8 + col))))
                 // }
                 // this.swapPieceColor();
-                console.log(`invalid cell [${this.row},${this.col}]`)
-                console.log(grid[this.row][this.col])
+                // console.log(`invalid cell [${this.row},${this.col}]`)
+                // console.log(grid[this.row][this.col])
             }
             updateBoard();
         });
@@ -116,8 +116,10 @@ function updateBoard() {
     let validMoves = 0n
     let shift = 63n
     if (player == 'white') {
+        console.log(player)
         validMoves = findValidMoves(whiteBitBoard, blackBitBoard)
     } else {
+        console.log(player)
         validMoves = findValidMoves(blackBitBoard, whiteBitBoard)
     }
     printBitboard(new Map([["B", blackBitBoard], ["W", whiteBitBoard], ["V", validMoves]]))
@@ -146,14 +148,25 @@ function updateBoard() {
 
 function flipPieces(addedPiece) {
     let piecesToSwap = 0n;
+    let boardToCheck = 0n;
+    let tempAddedPiece = 0n;
+    if (player == 'white') {
+        boardToCheck = blackBitBoard
+    } else {
+        boardToCheck = whiteBitBoard
+    }
     let dirMapping = [9n, 8n, 7n, 1n, -1n, -7n, -8n, -9n];
     validMovesArray.forEach((value, index) => {
-        // printBitboard(new Map([["M",(value & addedPiece)]]))
-        // printBitboard(new Map([["P",value]]))
-        if ((value & addedPiece) != 0n) {
-            printBitboard(new Map([["a",(addedPiece >> dirMapping[index])]]))
+        tempAddedPiece = addedPiece;
+        if ((value & tempAddedPiece) != 0n) {
+            tempAddedPiece = tempAddedPiece >> dirMapping[index]
+            while ((tempAddedPiece & boardToCheck) != 0n) {
+                piecesToSwap |= tempAddedPiece;
+                tempAddedPiece = tempAddedPiece >> dirMapping[index]
+            }
         }
     });
+    printBitboard(new Map([["a",piecesToSwap]]))
 }
 
 function printBitboard(boards) {
@@ -300,5 +313,7 @@ function checkDirection(playerPos, enemyPos, shiftdir, shiftAmount, mask){
 }
 
 function swapPlayer() {
+    console.log(`current player is ${player}`)
     player = player === 'black' ? 'white' : 'black';
+    console.log(`swapping player to ${player}`)
 }

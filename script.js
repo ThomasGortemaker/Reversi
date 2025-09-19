@@ -1,3 +1,19 @@
+/* TODO:
+    Basic game functionality:
+    - when a player has no moves swap the player
+    - determine when the game is finished (no valid moves possible for any player)
+    - determine who has won after the game is finished
+    UI:
+    - display whose turn it is
+    - highlight squares that are valid to play on
+    - show score
+    - display who has won and by how much
+    - a place to choose what to do (Player vs Player, Player vs Bot, Bot vs Bot)
+    BOT:
+    - create functions that let the computer think moves ahead to determine the best move
+    - create a function that lets the computer play the move without letting the player move
+    */
+
 class Piece {
     constructor(color) {
         this.element = document.createElement('span');

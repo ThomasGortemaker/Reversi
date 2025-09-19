@@ -19,6 +19,7 @@ class Piece {
 
 
 class Cell {
+    piece = null;
     constructor(x, y, row, col) {
         this.row = row;
         this.col = col;
@@ -40,9 +41,6 @@ class Cell {
         this.element.addEventListener('click', () => {
             if (this.playableCell) {
                 console.log(`clicked [${this.row},${this.col}]`)
-                // this.toggleColor();
-                // this.piece = this.addPiece(player);
-                console.log(`Clicked cell at row: ${this.row}, col: ${this.col}`);
                 if (player == 'white') {
                     whiteBitBoard = whiteBitBoard | (1n << row * 8n + col)
                 } else {
@@ -51,25 +49,9 @@ class Cell {
                 this.playableCell = false;
                 flipPieces(1n << (row * 8n + col));
                 swapPlayer();
-                // gridDiv.style.pointerEvents = "none";
-                // console.log('grid disabled');
-                // setTimeout(() => {
-                //     gridDiv.style.pointerEvents = 'auto';
-                //     console.log('grid enabled');
-                //   }, 2000);
+                updateBoard();
             } else {
-                // if (this.piece.element.style.backgroundColor == 'black') {
-                //     blackBitBoard = blackBitBoard ^ ((1n << (63n - BigInt(row * 8 + col))))
-                //     whiteBitBoard = whiteBitBoard | ((1n << (63n - BigInt(row * 8 + col))))
-                // } else {
-                //     whiteBitBoard = whiteBitBoard ^ ((1n << (63n - BigInt(row * 8 + col))))
-                //     blackBitBoard = blackBitBoard | ((1n << (63n - BigInt(row * 8 + col))))
-                // }
-                // this.swapPieceColor();
-                // console.log(`invalid cell [${this.row},${this.col}]`)
-                // console.log(grid[this.row][this.col])
             }
-            updateBoard();
         });
     }
 
@@ -86,6 +68,7 @@ class Cell {
         const piece = new Piece(color);
         this.element.append(piece.element);
         this.enable(false)
+        this.piece = piece;
         return piece
     }
 
@@ -131,12 +114,16 @@ function updateBoard() {
                 grid[row][col].enable(false)
             }
             if ((whiteBitBoard >> shift) & 1n) {
-                if (!grid[row][col].hasPiece()) {
+                if (grid[row][col].hasPiece()) {
+                    grid[row][col].piece.setColor('white')
+                } else {
                     console.log('adding white piece');
                     grid[row][col].addPiece('white');
                 }
             } else if ((blackBitBoard >> shift) & 1n) {
-                if (!grid[row][col].hasPiece()) {
+                if (grid[row][col].hasPiece()) {
+                    grid[row][col].piece.setColor('black')
+                } else {
                     console.log('adding black piece');
                     grid[row][col].addPiece('black');
                 }
@@ -166,7 +153,14 @@ function flipPieces(addedPiece) {
             }
         }
     });
-    printBitboard(new Map([["a",piecesToSwap]]))
+    // printBitboard(new Map([["S", piecesToSwap]]))
+    if (player == 'white') {
+        blackBitBoard ^= piecesToSwap
+        whiteBitBoard |= piecesToSwap
+    } else {
+        whiteBitBoard ^= piecesToSwap
+        blackBitBoard |= piecesToSwap
+    }
 }
 
 function printBitboard(boards) {

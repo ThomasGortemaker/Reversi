@@ -7,8 +7,8 @@ body {
 
 div#grid {
     /* top: 400px; */
-    width: 600px;
-    height: 600px;
+    width: 800px;
+    height: 800px;
     position: absolute;
     justify-content: center;
     top: 50%;

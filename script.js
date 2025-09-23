@@ -214,7 +214,7 @@ const cellcolor2 = '#de9849'
 const rows = 7n;
 const cols = rows;
 const gridDiv = document.getElementById("grid")
-const cellSize = (gridDiv.clientWidth)/Number(rows);
+const cellSize = (gridDiv.clientWidth)/Number(rows+1n);
 let grid = [];
 let validMovesArray = [];
 for (let row = rows; row >= 0n; row--) {

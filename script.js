@@ -4,6 +4,7 @@
     - determine when the game is finished (no valid moves possible for any player)
     - determine who has won after the game is finished
     UI:
+    - correctly allign board to center of the screen
     - display whose turn it is
     - highlight squares that are valid to play on
     - show score
@@ -57,13 +58,13 @@ class Cell {
         this.element.addEventListener('click', () => {
             if (this.playableCell) {
                 console.log(`clicked [${this.row},${this.col}]`)
+                flipPieces(1n << (row * 8n + col));
                 if (player == 'white') {
                     whiteBitBoard = whiteBitBoard | (1n << row * 8n + col)
                 } else {
                     blackBitBoard = blackBitBoard | (1n << row * 8n + col)
                 }
                 this.playableCell = false;
-                flipPieces(1n << (row * 8n + col));
                 swapPlayer();
                 updateBoard();
             } else {
@@ -116,10 +117,14 @@ function updateBoard() {
     let shift = 63n
     if (player == 'white') {
         console.log(player)
-        validMoves = findValidMoves(whiteBitBoard, blackBitBoard)
+        findValidMoves(whiteBitBoard, blackBitBoard).forEach((value) => {
+            validMoves = validMoves | value
+        });
     } else {
         console.log(player)
-        validMoves = findValidMoves(blackBitBoard, whiteBitBoard)
+        findValidMoves(blackBitBoard, whiteBitBoard).forEach((value) => {
+            validMoves = validMoves | value
+        });
     }
     printBitboard(new Map([["B", blackBitBoard], ["W", whiteBitBoard], ["V", validMoves]]))
     for (let row = rows; row >= 0n; row--) {
@@ -149,17 +154,52 @@ function updateBoard() {
     }
 }
 
+function getBestMove() {
+
+}
+
+function calculateMove(playerPieces, opponentPieces, move, depth) {
+
+    if(depth != 0) {
+
+    } else {
+        return(countPieces(playerPieces) - countPieces(opponentPieces))
+    }
+
+}
+
+function countPieces(pieces) {
+
+    /*
+    //pieces has 9 ones
+    pieces = 1010 1010 0111 0110
+    pieces = pieces >> 1 => 0101 0101 0011 1011 & 0101 0101 0101 0101 => 0101 0101 0001 0001 -> 1010 1010 0111 0110 - 0101 0101 0001 0001 => 0101 0101 0110 0101
+
+    
+    
+    
+    
+    */
+    mask1 = 0x5555555555555555n
+    mask2 = 0x3333333333333333n
+    mask4 = 0x0f0f0f0f0f0f0f0fn
+    pieces -= (pieces >> 1n) & mask1
+    pieces = (pieces & mask2) + ((pieces >> 2n) & mask2)
+    pieces = (pieces + (pieces >> 4n)) & mask4
+    pieces += pieces >> 8n
+    pieces += pieces >> 16n
+    pieces += pieces >> 32n
+    return pieces & 0x7fn
+}
+
 function flipPieces(addedPiece) {
     let piecesToSwap = 0n;
     let boardToCheck = 0n;
     let tempAddedPiece = 0n;
+    let dirMapping = [9n, 8n, 7n, 1n, -1n, -7n, -8n, -9n];
     if (player == 'white') {
         boardToCheck = blackBitBoard
-    } else {
-        boardToCheck = whiteBitBoard
-    }
-    let dirMapping = [9n, 8n, 7n, 1n, -1n, -7n, -8n, -9n];
-    validMovesArray.forEach((value, index) => {
+        findValidMoves(whiteBitBoard, blackBitBoard).forEach((value, index) => {
         tempAddedPiece = addedPiece;
         if ((value & tempAddedPiece) != 0n) {
             tempAddedPiece = tempAddedPiece >> dirMapping[index]
@@ -169,6 +209,19 @@ function flipPieces(addedPiece) {
             }
         }
     });
+    } else {
+        boardToCheck = whiteBitBoard
+        findValidMoves(blackBitBoard, whiteBitBoard).forEach((value, index) => {
+        tempAddedPiece = addedPiece;
+        if ((value & tempAddedPiece) != 0n) {
+            tempAddedPiece = tempAddedPiece >> dirMapping[index]
+            while ((tempAddedPiece & boardToCheck) != 0n) {
+                piecesToSwap |= tempAddedPiece;
+                tempAddedPiece = tempAddedPiece >> dirMapping[index]
+            }
+        }
+    });
+    }
     // printBitboard(new Map([["S", piecesToSwap]]))
     if (player == 'white') {
         blackBitBoard ^= piecesToSwap
@@ -216,7 +269,6 @@ const cols = rows;
 const gridDiv = document.getElementById("grid")
 const cellSize = (gridDiv.clientWidth)/Number(rows+1n);
 let grid = [];
-let validMovesArray = [];
 for (let row = rows; row >= 0n; row--) {
     const rowArray = [];
     for (let col = cols; col >= 0n; col--) {
@@ -243,8 +295,7 @@ function findValidMoves(playerPos, enemyPos) {
     const boardMask = 0xffffffffffffffffn;
     const leftEdgeMask = 0x7f7f7f7f7f7f7f7fn;
     const rightEdgeMask = 0xfefefefefefefefen;
-    let validMoves = 0n;
-    validMovesArray = [];
+    let validMovesArray = [];
     validMovesArray.push(checkDirection(playerPos, enemyPos, 'left', 9n, rightEdgeMask));
     validMovesArray.push(checkDirection(playerPos, enemyPos, 'left', 8n, boardMask));
     validMovesArray.push(checkDirection(playerPos, enemyPos, 'left', 7n, leftEdgeMask));
@@ -253,18 +304,18 @@ function findValidMoves(playerPos, enemyPos) {
     validMovesArray.push(checkDirection(playerPos, enemyPos, 'right', 7n, rightEdgeMask));
     validMovesArray.push(checkDirection(playerPos, enemyPos, 'right', 8n, boardMask));
     validMovesArray.push(checkDirection(playerPos, enemyPos, 'right', 9n, leftEdgeMask));
-    validMovesArray.forEach((value) => {
-        // console.log('index is ' + index);
-        // printBitboard(new Map([["A", value]]));
-        validMoves = validMoves | value
+    // validMovesArray.forEach((value) => {
+    //     // console.log('index is ' + index);
+    //     // printBitboard(new Map([["A", value]]));
+    //     validMoves = validMoves | value
 
-    });
+    // });
     // for (validMove in validMovesArray) {
     //     printBitboard(new Map([["a", validMove]]))
     //     validMoves = validMoves | validMove
     // }
 
-    return validMoves;
+    return validMovesArray;
 }
 
 function checkright(playerPos, enemyPos) {

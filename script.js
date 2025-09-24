@@ -48,9 +48,6 @@ class Cell {
             this.element.style.backgroundColor = cellcolor2;
         }
         this.element.classList.add('cell');
-        this.element.style.width = (cellSize - 4) + 'px';
-        this.element.style.height = (cellSize - 4) + 'px';
-        this.element.style.position = 'absolute';
         this.element.style.top = y + 'px';
         this.element.style.left = x + 'px';
         this.playableCell = true;

@@ -55,15 +55,7 @@ class Cell {
         this.element.addEventListener('click', () => {
             if (this.playableCell) {
                 console.log(`clicked [${this.row},${this.col}]`)
-                flipPieces(1n << (row * 8n + col));
-                if (player == 'white') {
-                    whiteBitBoard = whiteBitBoard | (1n << row * 8n + col)
-                } else {
-                    blackBitBoard = blackBitBoard | (1n << row * 8n + col)
-                }
-                this.playableCell = false;
-                swapPlayer();
-                updateBoard(true);
+                makeMove(1n << (row * 8n + col));
             } else {
             }
         });
@@ -109,53 +101,53 @@ class Cell {
     }
 }
 
-function updateBoard(previousPlayerMoved) {
-    let validMoves = 0n
-    let shift = 63n
+function makeMove(move) {
+    let validMoves = 0n;
+    flipPieces(move);
     if (player == 'white') {
-        console.log(player)
-        findValidMoves(whiteBitBoard, blackBitBoard).forEach((value) => {
-            validMoves = validMoves | value
-        });
+        whiteBitBoard = whiteBitBoard | move
     } else {
-        console.log(player)
-        findValidMoves(blackBitBoard, whiteBitBoard).forEach((value) => {
-            validMoves = validMoves | value
-        });
+        blackBitBoard = blackBitBoard | move
     }
-    if (validMoves == 0n && previousPlayerMoved) {
-            console.log(`${player} is unable to move, swapping players`)
-            swapPlayer()
-            updateBoard(false)
-    } else {
-        if (validMoves == 0n){
-            console.log('no moves possible for either player')
+    this.playableCell = false;
+    swapPlayer();
+    validMoves = findValidMovesasBigInt();
+    if (validMoves == 0n) {
+        swapPlayer();
+        validMoves = findValidMovesasBigInt();
+        if (validMoves == 0n) { 
+            console.log(`no player is able to move anymore the score ended with white: ${countPieces(whiteBitBoard)} versus black: ${countPieces(blackBitBoard)}`)
         }
-        printBitboard(new Map([["B", blackBitBoard], ["W", whiteBitBoard], ["V", validMoves]]))
-        for (let row = rows; row >= 0n; row--) {
-            for (let col = cols; col >= 0n; col--) {
-                if ((validMoves >> (row * 8n + col * 1n)) & 1n) {
-                    grid[row][col].enable(true)
-                } else {
-                    grid[row][col].enable(false)
-                }
-                if ((whiteBitBoard >> shift) & 1n) {
-                    if (grid[row][col].hasPiece()) {
-                        grid[row][col].piece.setColor('white')
-                    } else {
-                        console.log('adding white piece');
-                        grid[row][col].addPiece('white');
-                    }
-                } else if ((blackBitBoard >> shift) & 1n) {
-                    if (grid[row][col].hasPiece()) {
-                        grid[row][col].piece.setColor('black')
-                    } else {
-                        console.log('adding black piece');
-                        grid[row][col].addPiece('black');
-                    }
-                }
-                shift--;
+    }
+    updateBoard(validMoves);
+}
+
+function updateBoard(validMoves) {
+    let shift = 63n
+    printBitboard(new Map([["B", blackBitBoard], ["W", whiteBitBoard], ["V", validMoves]]))
+    for (let row = rows; row >= 0n; row--) {
+        for (let col = cols; col >= 0n; col--) {
+            if ((validMoves >> (row * 8n + col * 1n)) & 1n) {
+                grid[row][col].enable(true)
+            } else {
+                grid[row][col].enable(false)
             }
+            if ((whiteBitBoard >> shift) & 1n) {
+                if (grid[row][col].hasPiece()) {
+                    grid[row][col].piece.setColor('white')
+                } else {
+                    console.log('adding white piece');
+                    grid[row][col].addPiece('white');
+                }
+            } else if ((blackBitBoard >> shift) & 1n) {
+                if (grid[row][col].hasPiece()) {
+                    grid[row][col].piece.setColor('black')
+                } else {
+                    console.log('adding black piece');
+                    grid[row][col].addPiece('black');
+                }
+            }
+            shift--;
         }
     }
 }
@@ -287,7 +279,7 @@ for (let row = rows; row >= 0n; row--) {
     grid[row] = rowArray
 }
 console.log(`${grid[7][3].row},${grid[7][3].col}`)
-updateBoard(true)
+updateBoard(findValidMovesasBigInt())
 
 /*  shift direction: potential moves = (player pos & enemy pos) & edge mask), this will become potential moves
     shift direction: potential moves = (potential moves & edgemask)
@@ -322,6 +314,21 @@ function findValidMoves(playerPos, enemyPos) {
     // }
 
     return validMovesArray;
+}
+
+function findValidMovesasBigInt() {
+    validMoves = 0n;
+    if (player == 'white') {
+        findValidMoves(whiteBitBoard, blackBitBoard).forEach((value) => {
+            validMoves |= value
+        })
+    } else {
+        findValidMoves(blackBitBoard, whiteBitBoard).forEach((value) => {
+            validMoves |= value
+        })
+    }
+
+    return validMoves;
 }
 
 function checkright(playerPos, enemyPos) {
